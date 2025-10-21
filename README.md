@@ -8,9 +8,6 @@
 
 **终极修正版！恢复并稳定显示帖子旁的奥特曼分析按钮和可拖拽的悬浮球。支持手动精准分析和一键批量分析/关闭。**
 
-![演示GIF](https://raw.githubusercontent.com/Tiamat-KIT/ultraman-icon/main/demo.gif)
-*(演示图：奥特曼分析按钮与AI分析报告)*
-
 ## 📖 目录
 
 - 🎯 项目概述与痛点解决
