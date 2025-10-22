@@ -34,7 +34,7 @@
         body.dragging-no-select { -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; }
 
         /* 帖子跳转时的高亮效果 */
-        article.post-highlight-temp {
+        .post-highlight-temp {
             box-shadow: 0 0 12px 4px #f0ad4e !important;
             transition: box-shadow 0.3s ease-in-out;
         }
@@ -1292,11 +1292,15 @@
                 setupTreeInteractions(treeData, false); // Not first load anymore
             } else if (nodeEl) {
                 const postId = nodeEl.dataset.id;
-                const postOnPage = document.querySelector(`article[data-post-number="${postId}"]`);
+                const postOnPage = document.querySelector(`div.topic-post[data-post-number="${postId}"]`);
                 if (postOnPage) {
                     postOnPage.scrollIntoView({ behavior: 'auto', block: 'center' });
-                    postOnPage.classList.add('post-highlight-temp');
-                    setTimeout(() => { postOnPage.classList.remove('post-highlight-temp'); }, 1500);
+                    // The highlight is applied to the article inside the div for better visual effect
+                    const articleEl = postOnPage.querySelector('article');
+                    if (articleEl) {
+                        articleEl.classList.add('post-highlight-temp');
+                        setTimeout(() => { articleEl.classList.remove('post-highlight-temp'); }, 1500);
+                    }
                     logToTreeWindow('info', `已跳转到帖子 #${postId}`);
                 }
             }
