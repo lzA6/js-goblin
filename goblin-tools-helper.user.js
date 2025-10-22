@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         LinuxDo 超级分析助手 v19.4 (综合体验优化版)
+// @name         LinuxDo 超级分析助手 v19.5 (动态主题优化版)
 // @namespace    http://tampermonkey.net/
-// @version      19.4
-// @description  优化暗色模式字体显示，增强AI回复与网络搜索的上下文理解能力，移除失效的文生图模型，并修复网络搜索结果的Markdown渲染问题。
+// @version      19.5
+// @description  新增动态深色/浅色主题切换功能，并采用优化的深色模式UI，提升视觉体验和可读性。主题偏好将自动保存。
 // @author       Your AI Assistant & BiFangKNT
 // @match        https://linux.do/*
 // @icon         https://cdn.linux.do/uploads/default/optimized/3X/6/f/6f47356b54ada865485956b15a311c05b8f78a75_2_32x32.png
@@ -31,6 +31,7 @@
     const GEOMETRY_STORAGE_KEY = 'topicTreeWindowGeometry_v1';
     const VIEW_STATE_STORAGE_KEY = 'topicTreeView_v1';
     const WINDOW_STATE_STORAGE_KEY = 'topicTreeWindowState_v1';
+    const THEME_STORAGE_KEY = 'superAnalyzerTheme_v1';
 
     // --- 2. 样式定义 ---
     GM_addStyle(`
@@ -80,7 +81,7 @@
         .log-container div { white-space: pre-wrap; word-break: break-all; }
         .log-entry.info { color: #87cefa; } .log-entry.error { color: #ff6b6b; } .log-entry.warn { color: #ffd700; } .log-entry.success { color: #98fb98; }
 
-        /* --- 卡片美化 (淡色渐变背景) --- */
+        /* --- 卡片美化 (浅色模式) --- */
         .goblin-result-card { border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .goblin-result-card[data-model="JudgeTone"] { background: linear-gradient(135deg, #e7f3ff, #f5faff); border-color: #b3d7ff; }
         .goblin-result-card[data-model="JudgeTone"] .goblin-card-header { background-color: #d0e8ff; color: #00529B; }
@@ -108,60 +109,7 @@
         .web-search-card { background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%); border-color: #c7d2fe; }
         .web-search-card .goblin-card-header { background-color: #a5b4fc; color: #3730a3; }
 
-        /* --- [v19.4] Dark Mode Overrides --- */
-        html.dark .goblin-results-wrapper { border-top-color: #313244; }
-        html.dark .goblin-result-card { color: #cdd6f4; border-color: #45475a; }
-        html.dark .goblin-card-header { border-bottom-color: rgba(0,0,0,0.2); }
-        html.dark .goblin-card-header span { color: #1e1e2e; font-weight: 600; }
-        html.dark .goblin-card-content { color: #cdd6f4; font-weight: 500; text-shadow: 0 0 2px rgba(0,0,0,0.7); }
-        html.dark .goblin-card-content a { color: #89b4fa; }
-        html.dark .goblin-card-content.loading { color: #a6adc8; }
-        html.dark .goblin-result-card[data-model="JudgeTone"] { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #89b4fa; }
-        html.dark .goblin-result-card[data-model="JudgeTone"] .goblin-card-header { background-color: #89b4fa; }
-        html.dark .goblin-result-card[data-model="SuggestResponse"] { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #f9e2af; }
-        html.dark .goblin-result-card[data-model="SuggestResponse"] .goblin-card-header { background-color: #f9e2af; }
-        html.dark .goblin-formalizer-box { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #89b4fa; }
-        html.dark .goblin-formalizer-box .goblin-card-header { background-color: #89b4fa; }
-        html.dark .goblin-consultant-box { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #a6e3a1; }
-        html.dark .goblin-consultant-box .goblin-card-header { background-color: #a6e3a1; }
-        html.dark .goblin-professor-box { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #cba6f7; }
-        html.dark .goblin-professor-box .goblin-card-header { background-color: #cba6f7; }
-        html.dark .dream-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #cba6f7; }
-        html.dark .dream-result-card .goblin-card-header { background-color: #cba6f7; }
-        html.dark .summarizer-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #74c7ec; }
-        html.dark .summarizer-result-card .goblin-card-header { background-color: #74c7ec; }
-        html.dark .mymap-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #fab387; }
-        html.dark .mymap-result-card .goblin-card-header { background-color: #fab387; }
-        html.dark .decopy-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #94e2d5; }
-        html.dark .decopy-result-card .goblin-card-header { background-color: #94e2d5; }
-        html.dark .ai-reply-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #f38ba8; }
-        html.dark .ai-reply-card .goblin-card-header { background-color: #f38ba8; }
-        html.dark .eyedance-image-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #a6e3a1; }
-        html.dark .eyedance-image-card .goblin-card-header { background-color: #a6e3a1; }
-        html.dark .web-search-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #b4befe; }
-        html.dark .web-search-card .goblin-card-header { background-color: #b4befe; }
-        html.dark .goblin-card-content h4, html.dark .goblin-card-content h2, html.dark .goblin-card-content h3 { border-bottom-color: #45475a; }
-        html.dark .goblin-card-content strong, html.dark .goblin-card-content b { color: #f9e2af; background-color: #313244; }
-        html.dark .goblin-card-content em, html.dark .goblin-card-content i { color: #89b4fa; }
-        html.dark .goblin-card-content blockquote { border-left-color: #6c7086; color: #a6adc8; }
-        html.dark .goblin-card-content .emotion-highlight { background-color: #313244; color: #f9e2af; }
-        html.dark .formalizer-section, html.dark .consultant-section { background-color: rgba(205, 214, 244, 0.05); }
-        html.dark .eyedance-image-grid h4 { color: #bac2de; }
-        html.dark #topic-tree-window { background-color: #1e1e2e; color: #cdd6f4; }
-        html.dark #topic-tree-window-header { background-color: #181825; border-bottom-color: #313244; }
-        html.dark #topic-tree-window-toolbar .toolbar-button { background-color: #313244; border-color: #585b70; color: #cdd6f4; }
-        html.dark #topic-tree-window-toolbar .toolbar-button:hover { background-color: #45475a; border-color: #6c7086; }
-        html.dark #topic-tree-window-toolbar label { background: #45475a; }
-        html.dark #tree-window-close-btn { color: #bac2de; }
-        html.dark .topic-tree-svg .node > rect { fill: #181825; }
-        html.dark .topic-tree-svg .node .content-text { fill: #a6adc8; }
-        html.dark .topic-tree-svg .link { stroke: #585b70; }
-        html.dark .mymap-svg-container { background-image: linear-gradient(45deg, #313244 25%, transparent 25%), linear-gradient(-45deg, #313244 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #313244 75%), linear-gradient(-45deg, transparent 75%, #313244 75%); border-color: #45475a; }
-        html.dark .mymap-svg-container .node rect { fill: #181825; }
-        html.dark .mymap-svg-container .node .desc { fill: #a6adc8; }
-        html.dark .mymap-svg-container .link { stroke: #6c7086; }
-
-        /* --- 多维分析 & 顾问卡片内部颜色区分 --- */
+        /* --- 多维分析 & 顾问卡片内部颜色区分 (浅色) --- */
         .formalizer-section, .consultant-section { padding: 8px; margin-bottom: 10px; border-left: 3px solid; border-radius: 4px; transition: background-color 0.3s; }
         .formalizer-section h4, .consultant-section h4 { margin: 0 0 8px 0; padding: 0; border: none; font-size: 1em; font-weight: bold; }
         .formalizer-section-0 { border-color: #2980b9; background-color: rgba(41, 128, 185, 0.05); }
@@ -174,16 +122,138 @@
         .formalizer-section-3 h4 { color: #8e44ad; }
         .formalizer-section-4 { border-color: #c0392b; background-color: rgba(192, 57, 43, 0.05); }
         .formalizer-section-4 h4 { color: #c0392b; }
-
         .consultant-pros { border-color: #27ae60; background-color: rgba(39, 174, 96, 0.05); }
         .consultant-pros h4 { color: #27ae60; }
         .consultant-cons { border-color: #d35400; background-color: rgba(211, 84, 0, 0.05); }
         .consultant-cons h4 { color: #d35400; }
         .consultant-advice { border-color: #8e44ad; background-color: rgba(142, 68, 173, 0.05); }
         .consultant-advice h4 { color: #8e44ad; }
-
         .professor-explanation h4 { color: #2980b9; }
         .professor-example h4 { color: #27ae60; }
+
+        /* --- [v19.5] 动态深色模式样式 --- */
+        body.sa-dark-theme .goblin-results-wrapper { border-top-color: #45475a; }
+        body.sa-dark-theme .control-analyze-btn { background: rgba(49, 50, 68, 0.9); border-color: #45475a; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+        body.sa-dark-theme .control-analyze-btn:hover { background: rgba(69, 71, 90, 0.95); box-shadow: 0 3px 10px rgba(0,0,0,0.4); }
+
+        /* 卡片基础样式 (深色) */
+        body.sa-dark-theme .goblin-result-card { border-radius: 8px; border: 1px solid #585b70; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.3); color: #f5f5f5; background-color: #1e1e2e; }
+        body.sa-dark-theme .goblin-card-header { border-bottom-color: #45475a; }
+        body.sa-dark-theme .goblin-card-header span { color: #ffffff; font-weight: 700; }
+        body.sa-dark-theme .goblin-card-content { color: #f5f5f5; }
+
+        /* 各类卡片深色样式 */
+        body.sa-dark-theme .goblin-result-card[data-model="JudgeTone"] { background: linear-gradient(135deg, #1a1d2e, #13151f); border-color: #89b4fa; }
+        body.sa-dark-theme .goblin-result-card[data-model="JudgeTone"] .goblin-card-header { background-color: #4a7bc4; color: #ffffff; }
+        body.sa-dark-theme .goblin-result-card[data-model="SuggestResponse"] { background: linear-gradient(135deg, #1e1c12, #15130a); border-color: #f9e2af; }
+        body.sa-dark-theme .goblin-result-card[data-model="SuggestResponse"] .goblin-card-header { background-color: #b89850; color: #ffffff; }
+        body.sa-dark-theme .goblin-formalizer-box { background: linear-gradient(135deg, #1a1d2e, #13151f); border-color: #89b4fa; }
+        body.sa-dark-theme .goblin-formalizer-box .goblin-card-header { background-color: #4a7bc4; color: #ffffff; }
+        body.sa-dark-theme .goblin-consultant-box { background: linear-gradient(135deg, #151d15, #0d140d); border-color: #a6e3a1; }
+        body.sa-dark-theme .goblin-consultant-box .goblin-card-header { background-color: #5a965a; color: #ffffff; }
+        body.sa-dark-theme .goblin-professor-box { background: linear-gradient(135deg, #1f1a27, #15111b); border-color: #cba6f7; }
+        body.sa-dark-theme .goblin-professor-box .goblin-card-header { background-color: #8a5fb8; color: #ffffff; }
+        body.sa-dark-theme .dream-result-card { background: linear-gradient(135deg, #1f1a27, #15111b); border-color: #cba6f7; }
+        body.sa-dark-theme .dream-result-card .goblin-card-header { background-color: #8a5fb8; color: #ffffff; }
+        body.sa-dark-theme .dream-result-card h2 { color: #e0c5ff; border-bottom-color: #585b70; }
+        body.sa-dark-theme .summarizer-result-card { background: linear-gradient(135deg, #131c1e, #0c1416); border-color: #74c7ec; }
+        body.sa-dark-theme .summarizer-result-card .goblin-card-header { background-color: #4a8aaa; color: #ffffff; }
+        body.sa-dark-theme .mymap-result-card { background: linear-gradient(135deg, #1e1812, #15110a); border-color: #fab387; }
+        body.sa-dark-theme .mymap-result-card .goblin-card-header { background-color: #b87a50; color: #ffffff; }
+        body.sa-dark-theme .decopy-result-card { background: linear-gradient(135deg, #131e1c, #0c1614); border-color: #94e2d5; }
+        body.sa-dark-theme .decopy-result-card .goblin-card-header { background-color: #52a399; color: #ffffff; }
+        body.sa-dark-theme .ai-reply-card { background: linear-gradient(135deg, #1f131a, #160d12); border-color: #f38ba8; }
+        body.sa-dark-theme .ai-reply-card .goblin-card-header { background-color: #b05873; color: #ffffff; }
+        body.sa-dark-theme .eyedance-image-card { background: linear-gradient(135deg, #151d15, #0d140d); border-color: #a6e3a1; }
+        body.sa-dark-theme .eyedance-image-card .goblin-card-header { background-color: #5a965a; color: #ffffff; }
+        body.sa-dark-theme .web-search-card { background: linear-gradient(135deg, #1a1d2e, #13151f); border-color: #b4befe; }
+        body.sa-dark-theme .web-search-card .goblin-card-header { background-color: #6a75c4; color: #ffffff; }
+
+        /* 内容文字样式 (深色) */
+        body.sa-dark-theme .goblin-card-content h4, body.sa-dark-theme .goblin-card-content h2, body.sa-dark-theme .goblin-card-content h3 { color: #d0d8ff; border-bottom-color: #585b70; font-weight: 600; }
+        body.sa-dark-theme .goblin-card-content p { color: #f5f5f5; margin-bottom: 1em; }
+        body.sa-dark-theme .goblin-card-content strong, body.sa-dark-theme .goblin-card-content b { color: #ffe8a3; background-color: rgba(249, 226, 175, 0.2); padding: 2px 6px; border-radius: 3px; }
+        body.sa-dark-theme .goblin-card-content em, body.sa-dark-theme .goblin-card-content i { color: #9fe6f5; }
+        body.sa-dark-theme .goblin-card-content blockquote { border-left-color: #89b4fa; background-color: rgba(137, 180, 250, 0.1); color: #e0e0e0; padding: 8px 12px; }
+        body.sa-dark-theme .goblin-card-content code { background-color: #313244; color: #ff9db8; padding: 2px 6px; border-radius: 4px; font-family: 'Consolas', 'Monaco', monospace; }
+        body.sa-dark-theme .goblin-card-content .emotion-highlight { background-color: rgba(249, 226, 175, 0.25); color: #ffe8a3; font-weight: 600; padding: 2px 6px; }
+        body.sa-dark-theme .goblin-card-content ul li, body.sa-dark-theme .goblin-card-content ol li { color: #f5f5f5; margin-bottom: 0.5em; }
+        body.sa-dark-theme .goblin-card-content a { color: #89b4fa; text-decoration: underline; }
+        body.sa-dark-theme .goblin-card-content a:hover { color: #b4befe; }
+        body.sa-dark-theme .goblin-card-content.loading { color: #e0e0e0; font-style: italic; }
+
+        /* 多维分析和顾问卡片 (深色) */
+        body.sa-dark-theme .formalizer-section, body.sa-dark-theme .consultant-section { background-color: rgba(137, 180, 250, 0.1); border-left-width: 4px; color: #f5f5f5; padding: 8px; margin-bottom: 10px; border-radius: 4px; }
+        body.sa-dark-theme .formalizer-section h4, body.sa-dark-theme .consultant-section h4 { font-weight: 600; margin: 0 0 8px 0; }
+        body.sa-dark-theme .formalizer-section p, body.sa-dark-theme .consultant-section p { color: #f5f5f5; }
+        body.sa-dark-theme .formalizer-section-0 { border-color: #89b4fa; background-color: rgba(137, 180, 250, 0.12); }
+        body.sa-dark-theme .formalizer-section-0 h4 { color: #b4d4ff; }
+        body.sa-dark-theme .formalizer-section-1 { border-color: #a6e3a1; background-color: rgba(166, 227, 161, 0.12); }
+        body.sa-dark-theme .formalizer-section-1 h4 { color: #c0f5bc; }
+        body.sa-dark-theme .formalizer-section-2 { border-color: #fab387; background-color: rgba(250, 179, 135, 0.12); }
+        body.sa-dark-theme .formalizer-section-2 h4 { color: #ffc89f; }
+        body.sa-dark-theme .formalizer-section-3 { border-color: #cba6f7; background-color: rgba(203, 166, 247, 0.12); }
+        body.sa-dark-theme .formalizer-section-3 h4 { color: #e0c5ff; }
+        body.sa-dark-theme .formalizer-section-4 { border-color: #f38ba8; background-color: rgba(243, 139, 168, 0.12); }
+        body.sa-dark-theme .formalizer-section-4 h4 { color: #ffa5c0; }
+        body.sa-dark-theme .consultant-pros { border-color: #a6e3a1; background-color: rgba(166, 227, 161, 0.12); }
+        body.sa-dark-theme .consultant-pros h4 { color: #c0f5bc; }
+        body.sa-dark-theme .consultant-cons { border-color: #fab387; background-color: rgba(250, 179, 135, 0.12); }
+        body.sa-dark-theme .consultant-cons h4 { color: #ffc89f; }
+        body.sa-dark-theme .consultant-advice { border-color: #cba6f7; background-color: rgba(203, 166, 247, 0.12); }
+        body.sa-dark-theme .consultant-advice h4 { color: #e0c5ff; }
+        body.sa-dark-theme .professor-explanation h4 { color: #89b4fa; }
+        body.sa-dark-theme .professor-example h4 { color: #a6e3a1; }
+
+        /* 图片网格 (深色) */
+        body.sa-dark-theme .eyedance-image-grid h4 { color: #e0e0e0; font-weight: 500; }
+        body.sa-dark-theme .eyedance-image-grid img { border: 1px solid #45475a; }
+
+        /* 工具栏和按钮 (深色) */
+        body.sa-dark-theme .goblin-toolbar button { opacity: 0.85; filter: brightness(1.3); }
+        body.sa-dark-theme .goblin-toolbar button:hover { opacity: 1; filter: brightness(1.5); }
+        body.sa-dark-theme .goblin-toolbar svg { fill: #e0e0e0; }
+
+        /* 帖子结构树窗口 (深色) */
+        body.sa-dark-theme #topic-tree-window { background-color: #1e1e2e; color: #f5f5f5; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        body.sa-dark-theme #topic-tree-window-header { background-color: #181825; border-bottom-color: #45475a; }
+        body.sa-dark-theme #topic-tree-window-title { color: #f0f0f0; font-weight: 600; }
+        body.sa-dark-theme #topic-tree-window-toolbar .toolbar-button { background-color: #313244; border-color: #45475a; color: #e5e5e5; }
+        body.sa-dark-theme #topic-tree-window-toolbar .toolbar-button:hover { background-color: #45475a; border-color: #585b70; color: #ffffff; }
+        body.sa-dark-theme #topic-tree-window-toolbar label { background: #313244; color: #e5e5e5; border: 1px solid #45475a; }
+        body.sa-dark-theme #topic-tree-window-toolbar label:hover { background: #45475a; color: #ffffff; }
+        body.sa-dark-theme #tree-window-close-btn { color: #e5e5e5; }
+        body.sa-dark-theme #tree-window-close-btn:hover { color: #ff9db8; }
+        body.sa-dark-theme .topic-tree-svg .node > rect { fill: #11111b; stroke-width: 2; }
+        body.sa-dark-theme .topic-tree-svg .node .title { fill: #f0f0f0; font-weight: 600; }
+        body.sa-dark-theme .topic-tree-svg .node .content-text { fill: #d0d0d0; }
+        body.sa-dark-theme .topic-tree-svg .link { stroke: #45475a; stroke-width: 2px; }
+        body.sa-dark-theme #topic-tree-window-body { background-color: #181825; background-image: linear-gradient(45deg, #1e1e2e 25%, transparent 25%), linear-gradient(-45deg, #1e1e2e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e1e2e 75%), linear-gradient(-45deg, transparent 75%, #1e1e2e 75%); }
+
+        /* 思维导图 (深色) */
+        body.sa-dark-theme .mymap-svg-container { background-color: #181825; background-image: linear-gradient(45deg, #1e1e2e 25%, transparent 25%), linear-gradient(-45deg, #1e1e2e 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1e1e2e 75%), linear-gradient(-45deg, transparent 75%, #1e1e2e 75%); border-color: #45475a; }
+        body.sa-dark-theme .mymap-svg-container .node rect { fill: #11111b; stroke-width: 2; }
+        body.sa-dark-theme .mymap-svg-container .node .title { fill: inherit; font-weight: 600; }
+        body.sa-dark-theme .mymap-svg-container .node .desc { fill: #d0d0d0; }
+        body.sa-dark-theme .mymap-svg-container .link { stroke: #585b70; stroke-width: 2px; }
+
+        /* 悬浮球 (深色) */
+        body.sa-dark-theme #goblin-fab-button { background-color: #313244; box-shadow: 0 4px 16px rgba(0,0,0,0.5); border: 1px solid #45475a; }
+        body.sa-dark-theme #goblin-fab-button:hover { background-color: #45475a; box-shadow: 0 6px 20px rgba(0,0,0,0.6); }
+        body.sa-dark-theme #goblin-fab-menu { background-color: #1e1e2e; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #45475a; }
+        body.sa-dark-theme .goblin-fab-menu-button { background-color: #313244; border-color: #45475a; color: #e5e5e5; }
+        body.sa-dark-theme .goblin-fab-menu-button:hover { background-color: #45475a; color: #ffffff; }
+
+        /* 设置模态框 (深色) */
+        body.sa-dark-theme #goblin-modal-overlay { background: rgba(0,0,0,0.7); }
+        body.sa-dark-theme #goblin-settings-modal { background: #1e1e2e; box-shadow: 0 10px 40px rgba(0,0,0,0.8); border: 1px solid #45475a; }
+        body.sa-dark-theme #goblin-settings-header { border-bottom-color: #45475a; color: #f0f0f0; background-color: #181825; }
+        body.sa-dark-theme #goblin-settings-close-btn { color: #e5e5e5; }
+        body.sa-dark-theme #goblin-settings-close-btn:hover { color: #ff9db8; }
+        body.sa-dark-theme #goblin-settings-body { background-color: #1e1e2e; }
+        body.sa-dark-theme .goblin-setting-item label { color: #e5e5e5; }
+        body.sa-dark-theme .goblin-setting-item label:hover { color: #ffffff; }
+        body.sa-dark-theme .goblin-setting-item input[type="checkbox"] { accent-color: #89b4fa; cursor: pointer; }
 
         /* 全新思维导图渲染样式 */
         .mymap-svg-container { width: 100%; height: 500px; cursor: grab; background-image: linear-gradient(45deg, #f5f5f5 25%, transparent 25%), linear-gradient(-45deg, #f5f5f5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f5f5f5 75%), linear-gradient(-45deg, transparent 75%, #f5f5f5 75%); background-size: 20px 20px; border: 1px solid #e0e0e0; border-radius: 8px; }
@@ -1009,7 +1079,7 @@
     }
 
 
-    // --- 5. 设置与悬浮球 ---
+    // --- 5. 设置、主题与悬浮球 ---
     const SETTINGS_KEY = 'superAnalyzerSettings_v4';
     const DEFAULT_SETTINGS = Object.keys(ANALYSIS_TOOLS).reduce((acc, key) => ({ ...acc, [key]: true }), {});
     let intersectionObserver = null;
@@ -1020,10 +1090,40 @@
     }
     function saveSettings(settings) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }
 
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.body.classList.add('sa-dark-theme');
+        } else {
+            document.body.classList.remove('sa-dark-theme');
+        }
+        const themeButton = document.querySelector('[data-action="toggle-theme"]');
+        if (themeButton) {
+            themeButton.textContent = theme === 'dark' ? '切换到浅色模式' : '切换到深色模式';
+        }
+    }
+
+    function toggleTheme() {
+        const currentTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        localStorage.setItem(THEME_STORAGE_KEY, newTheme);
+        applyTheme(newTheme);
+    }
+
     function createMainUI() {
         const faviconUrl = document.querySelector('link[rel="icon"]')?.href || 'https://cdn.linux.do/uploads/default/optimized/3X/6/f/6f47356b54ada865485956b15a311c05b8f78a75_2_32x32.png';
         const fabContainer = document.createElement('div'); fabContainer.id = 'goblin-fab-container';
-        fabContainer.innerHTML = `<div id="goblin-fab-menu"><button class="goblin-fab-menu-button" data-action="settings">打开设置</button><button class="goblin-fab-menu-button" data-action="topic-tree">帖子结构树</button><button class="goblin-fab-menu-button" data-action="close-all">关闭所有卡片</button></div><div id="goblin-fab-button" title="助手菜单"><img src="${faviconUrl}"></div>`;
+
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+        const themeButtonText = savedTheme === 'dark' ? '切换到浅色模式' : '切换到深色模式';
+
+        fabContainer.innerHTML = `
+            <div id="goblin-fab-menu">
+                <button class="goblin-fab-menu-button" data-action="toggle-theme">${themeButtonText}</button>
+                <button class="goblin-fab-menu-button" data-action="settings">打开设置</button>
+                <button class="goblin-fab-menu-button" data-action="topic-tree">帖子结构树</button>
+                <button class="goblin-fab-menu-button" data-action="close-all">关闭所有卡片</button>
+            </div>
+            <div id="goblin-fab-button" title="助手菜单"><img src="${faviconUrl}"></div>`;
         document.body.appendChild(fabContainer);
 
         const modalOverlay = document.createElement('div'); modalOverlay.id = 'goblin-modal-overlay';
@@ -1086,6 +1186,7 @@
             if (action === 'settings') modalOverlay.classList.add('visible');
             if (action === 'topic-tree') toggleTopicTreeWindow();
             if (action === 'close-all') document.querySelectorAll('.goblin-results-wrapper').forEach(w => w.remove());
+            if (action === 'toggle-theme') toggleTheme();
             fabMenu.classList.remove('visible');
         });
 
@@ -1690,6 +1791,10 @@
 
     // --- 8. 初始化与执行 ---
     function initialize() {
+        // 应用保存的主题
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'light';
+        applyTheme(savedTheme);
+
         createMainUI();
         const postObserver = new MutationObserver(() => document.querySelectorAll('article.boxed').forEach(processPost));
         postObserver.observe(document.body, { childList: true, subtree: true });
