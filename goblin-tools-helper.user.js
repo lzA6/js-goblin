@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         LinuxDo 超级分析助手 v18.1 (终极加载修复 & 完整功能)
+// @name         LinuxDo 超级分析助手 v19.4 (综合体验优化版)
 // @namespace    http://tampermonkey.net/
-// @version      18.1
-// @description  终极加载修复！采用全新的两阶段加载机制，完美解决找不到帖子容器的问题，确保100%加载完整帖子。保留窗口/视图状态记忆、点击跳转等全部优化功能。
+// @version      19.4
+// @description  优化暗色模式字体显示，增强AI回复与网络搜索的上下文理解能力，移除失效的文生图模型，并修复网络搜索结果的Markdown渲染问题。
 // @author       Your AI Assistant & BiFangKNT
 // @match        https://linux.do/*
 // @icon         https://cdn.linux.do/uploads/default/optimized/3X/6/f/6f47356b54ada865485956b15a311c05b8f78a75_2_32x32.png
@@ -14,13 +14,17 @@
 // @connect      pjfuothbq9.execute-api.us-east-1.amazonaws.com
 // @connect      www.mymap.ai
 // @connect      api.decopy.ai
-// @connect      hermes.nousresearch.com
+// @connect      thinkany.ai
+// @connect      eyedance.net
 // ==/UserScript==
 
 (function() {
     'use strict';
 
     // --- 1. 配置项 ---
+    // [自动填充] 从 thinkany-2api 项目 .env 文件中提取的凭证
+    const THINKANY_COOKIE = "NEXT_LOCALE=zh; cf_clearance=kV21zX2B7D46SAdA7xahQu0JjbTKY8MtHw3i_MUsdnw-1760888616-1.2.1.1-IXUjQqM0dc8FQW7UhGeQAhT29wyhu4Cq3jPTugyC2_4axJpdCjle7gS0bnEIYwzURta_sFGkcY4tVj7vRS_1vfStNXoh9Nj0PG_fmGlQYqlUueM_jUj4I9Y94jhMEucjzB.MutKg2TFGt7ucIYdL3r6Ay1DVNo__1f.ZWN6oyzjISlrJl712P9YZpBeBdGHbbund0CffNshh7T9efhqBBY6iceHIDEHQ8hxlmzvf50Q; __Host-authjs.csrf-token=edddff18840b5634a841ce61071f35d6cb6103c923f5eae82dc9977c2b55a45d%7C9de96d4353d1e7a24e065b10c81bfeb08e711d62042358aef91698a0b14a33b7; _ga=GA1.1.1833108751.1760888618; g_state={\"i_l\":0,\"i_ll\":1760888619014}; __Secure-authjs.callback-url=https%3A%2F%2Fthinkany.ai%2Fzh; __Secure-authjs.session-token=eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiV20tem9xUkM5VmRrZTRzcUs0STR4QzE2VXp4OXBDVHUyU2diaWtqdUI1eHZJS1BsRkRyOS1oYnQyYmZ6QVRRUzAwNDZHTXRBTy1NVmplSVVmaTZJYncifQ..nPe6ln2dZEwna9s1siQN4A.wTjJkxbzyfLtGYWFQRbKgPMvw_z1b02zwkEKcXiW91OrBRuJcgpefEeOI1D5GtrCTe5Kt__6mqK6D0xb1l5ty4fCA6U8f5Vojezz44zTR59nQM6YtpiYLmLdKWOBSXPOSOzZa3DV4WTCeDoRtrwC41dVYBcYAqzwNb2RfANxszuGsJsHeYDU7b743fL3AMJ1rzbN1nISYZW1ReBKcqvAf5zqa-BlEiuVGUkRlLl4qhsD4oLCdhR-4-_ldE-7rBxS9gfbT7K-RCbkpWoL0lq3jgdH_ljOpT3TsHrgFg-cjuYPw6z3xBB9cWbe8F6mFH0DIrl1TCSIVfpkYUIpxhzwOsMDUkcNUm2JAzEN9DdGkjz8tdfOQiUp6lwzaOqQprIQT8XeTis3iM-SSE3MqtulXiFovm2bqG0_InJqkl23LhdzqOpZJZqxVZ4EhmPfIKOu6Wg0h23sVcoi6MzVE_Vmybs4SKg22F3usBEYyOeyvbqbuUBqYJChlByg4_mULvJw8H7cH8f5VDMxEwy5-pPNyd8odT_qJZdX5lNnwj-AFiMM8R_-7xr9WDao3LhNkijW4WAyb4pw2Sv_NFmMuDZLrkXO_iZVZbED4hgmIsy5IKKhbDEXnLHLlS0bJ4ofqVyN.ICtpZfE96UIqt1vdIGxf1v6ZfevCWq9b26H2bML9Bxg; _ga_MEVJ0WH73J=GS2.1.s1760888618$$o1$$g1$$t1760890003$$j60$$l0$$h0";
+
     const USER_DREAM_COOKIE = '_gid=GA1.2.97987403.1760801156; _ga_NLE2X95C95=GS2.1.s1760801545$o1$g1$t1760801631$j42$l0$h0; _ga_BGQYNX5K42=GS2.1.s1760801155$o1$g1$t1760801645$j27$l0$h0; _ga=GA1.2.583687601.1760801155';
     const DECOPY_PRODUCT_CODE = "067003";
     const DECOPY_PRODUCT_SERIAL = "eb0f5222701cbd6e67799c0cb99ec32b";
@@ -56,15 +60,19 @@
         .goblin-toolbar button { background: none; border: none; cursor: pointer; opacity: 0.7; margin-left: 8px; padding: 2px; }
         .goblin-toolbar button:hover { opacity: 1; }
         .goblin-toolbar svg { width: 14px; height: 14px; vertical-align: middle; }
-        .goblin-card-content h4, .goblin-card-content h2 { margin: 1.2em 0 0.8em; padding-bottom: 0.3em; border-bottom: 1px solid rgba(0,0,0,0.1); font-size: 1.1em; }
-        .goblin-card-content h4:first-child, .goblin-card-content h2:first-child { margin-top: 0; }
+        .goblin-card-content h4, .goblin-card-content h2, .goblin-card-content h3 { margin: 1.2em 0 0.8em; padding-bottom: 0.3em; border-bottom: 1px solid rgba(0,0,0,0.1); font-size: 1.1em; }
+        .goblin-card-content h4:first-child, .goblin-card-content h2:first-child, .goblin-card-content h3:first-child { margin-top: 0; }
         .goblin-card-content p { margin-bottom: 1em; }
         .goblin-card-content strong, .goblin-card-content b { color: #c7254e; background-color: #f9f2f4; padding: 2px 4px; border-radius: 4px; }
         .goblin-card-content em, .goblin-card-content i { color: #00529B; }
         .goblin-card-content ul, .goblin-card-content ol { padding-left: 20px; }
         .goblin-card-content ul { list-style: disc; }
+        .goblin-card-content ol { list-style: decimal; }
         .goblin-card-content blockquote { border-left: 4px solid #ccc; padding-left: 10px; margin-left: 5px; color: #666; }
         .goblin-card-content .emotion-highlight { background-color: #fffbe6; color: #d46b08; font-weight: bold; padding: 1px 3px; border-radius: 3px; }
+        .eyedance-image-grid { display: grid; grid-template-columns: 1fr; gap: 10px; text-align: center; }
+        .eyedance-image-grid img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .eyedance-image-grid h4 { font-size: 0.9em; color: #555; margin-bottom: 5px; border: none; }
 
         /* 日志窗口 */
         .log-container { display: none; background: #2d2d2d; color: #f0f0f0; font-family: monospace; font-size: 12px; padding: 10px; margin-top: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto; }
@@ -93,6 +101,65 @@
         .mymap-result-card .goblin-card-header { background-color: #fbe5a2; color: #7a5c00; }
         .decopy-result-card { background: linear-gradient(135deg, #e6fffb 0%, #f0fffb 100%); border-color: #b5f5ec; }
         .decopy-result-card .goblin-card-header { background-color: #87e8de; color: #00474f; }
+        .ai-reply-card { background: linear-gradient(135deg, #fde2e4 0%, #fff1f2 100%); border-color: #fecdd3; }
+        .ai-reply-card .goblin-card-header { background-color: #fbb4b9; color: #881337; }
+        .eyedance-image-card { background: linear-gradient(135deg, #d1fae5 0%, #f0fdf4 100%); border-color: #a7f3d0; }
+        .eyedance-image-card .goblin-card-header { background-color: #6ee7b7; color: #047857; }
+        .web-search-card { background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%); border-color: #c7d2fe; }
+        .web-search-card .goblin-card-header { background-color: #a5b4fc; color: #3730a3; }
+
+        /* --- [v19.4] Dark Mode Overrides --- */
+        html.dark .goblin-results-wrapper { border-top-color: #313244; }
+        html.dark .goblin-result-card { color: #cdd6f4; border-color: #45475a; }
+        html.dark .goblin-card-header { border-bottom-color: rgba(0,0,0,0.2); }
+        html.dark .goblin-card-header span { color: #1e1e2e; font-weight: 600; }
+        html.dark .goblin-card-content { color: #cdd6f4; font-weight: 500; text-shadow: 0 0 2px rgba(0,0,0,0.7); }
+        html.dark .goblin-card-content a { color: #89b4fa; }
+        html.dark .goblin-card-content.loading { color: #a6adc8; }
+        html.dark .goblin-result-card[data-model="JudgeTone"] { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #89b4fa; }
+        html.dark .goblin-result-card[data-model="JudgeTone"] .goblin-card-header { background-color: #89b4fa; }
+        html.dark .goblin-result-card[data-model="SuggestResponse"] { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #f9e2af; }
+        html.dark .goblin-result-card[data-model="SuggestResponse"] .goblin-card-header { background-color: #f9e2af; }
+        html.dark .goblin-formalizer-box { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #89b4fa; }
+        html.dark .goblin-formalizer-box .goblin-card-header { background-color: #89b4fa; }
+        html.dark .goblin-consultant-box { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #a6e3a1; }
+        html.dark .goblin-consultant-box .goblin-card-header { background-color: #a6e3a1; }
+        html.dark .goblin-professor-box { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #cba6f7; }
+        html.dark .goblin-professor-box .goblin-card-header { background-color: #cba6f7; }
+        html.dark .dream-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #cba6f7; }
+        html.dark .dream-result-card .goblin-card-header { background-color: #cba6f7; }
+        html.dark .summarizer-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #74c7ec; }
+        html.dark .summarizer-result-card .goblin-card-header { background-color: #74c7ec; }
+        html.dark .mymap-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #fab387; }
+        html.dark .mymap-result-card .goblin-card-header { background-color: #fab387; }
+        html.dark .decopy-result-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #94e2d5; }
+        html.dark .decopy-result-card .goblin-card-header { background-color: #94e2d5; }
+        html.dark .ai-reply-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #f38ba8; }
+        html.dark .ai-reply-card .goblin-card-header { background-color: #f38ba8; }
+        html.dark .eyedance-image-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #a6e3a1; }
+        html.dark .eyedance-image-card .goblin-card-header { background-color: #a6e3a1; }
+        html.dark .web-search-card { background: linear-gradient(135deg, #313244, #1e1e2e); border-color: #b4befe; }
+        html.dark .web-search-card .goblin-card-header { background-color: #b4befe; }
+        html.dark .goblin-card-content h4, html.dark .goblin-card-content h2, html.dark .goblin-card-content h3 { border-bottom-color: #45475a; }
+        html.dark .goblin-card-content strong, html.dark .goblin-card-content b { color: #f9e2af; background-color: #313244; }
+        html.dark .goblin-card-content em, html.dark .goblin-card-content i { color: #89b4fa; }
+        html.dark .goblin-card-content blockquote { border-left-color: #6c7086; color: #a6adc8; }
+        html.dark .goblin-card-content .emotion-highlight { background-color: #313244; color: #f9e2af; }
+        html.dark .formalizer-section, html.dark .consultant-section { background-color: rgba(205, 214, 244, 0.05); }
+        html.dark .eyedance-image-grid h4 { color: #bac2de; }
+        html.dark #topic-tree-window { background-color: #1e1e2e; color: #cdd6f4; }
+        html.dark #topic-tree-window-header { background-color: #181825; border-bottom-color: #313244; }
+        html.dark #topic-tree-window-toolbar .toolbar-button { background-color: #313244; border-color: #585b70; color: #cdd6f4; }
+        html.dark #topic-tree-window-toolbar .toolbar-button:hover { background-color: #45475a; border-color: #6c7086; }
+        html.dark #topic-tree-window-toolbar label { background: #45475a; }
+        html.dark #tree-window-close-btn { color: #bac2de; }
+        html.dark .topic-tree-svg .node > rect { fill: #181825; }
+        html.dark .topic-tree-svg .node .content-text { fill: #a6adc8; }
+        html.dark .topic-tree-svg .link { stroke: #585b70; }
+        html.dark .mymap-svg-container { background-image: linear-gradient(45deg, #313244 25%, transparent 25%), linear-gradient(-45deg, #313244 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #313244 75%), linear-gradient(-45deg, transparent 75%, #313244 75%); border-color: #45475a; }
+        html.dark .mymap-svg-container .node rect { fill: #181825; }
+        html.dark .mymap-svg-container .node .desc { fill: #a6adc8; }
+        html.dark .mymap-svg-container .link { stroke: #6c7086; }
 
         /* --- 多维分析 & 顾问卡片内部颜色区分 --- */
         .formalizer-section, .consultant-section { padding: 8px; margin-bottom: 10px; border-left: 3px solid; border-radius: 4px; transition: background-color 0.3s; }
@@ -261,7 +328,7 @@
                         log('success', `[API Call] ${service} 请求成功, 状态码: ${res.status}`);
                         resolve(res.responseText);
                     } else {
-                        log('error', `[API Call] ${service} 请求失败, 状态码: ${res.status}`);
+                        log('error', `[API Call] ${service} 请求失败, 状态码: ${res.status}, 响应: ${res.responseText}`);
                         reject(`${service}请求失败: ${res.status}`);
                     }
                 },
@@ -279,6 +346,9 @@
 
     // --- 4. 各模块实现 ---
     const ANALYSIS_TOOLS = {
+        aiReply: { create: (post) => createThinkAnyCard(post, 'chat', 'AI 回复 (ThinkAny)', 'ai-reply-card'), label: 'AI 回复 (ThinkAny)' },
+        webSearch: { create: (post) => createThinkAnyCard(post, 'search', '网络搜索 (ThinkAny)', 'web-search-card'), label: '网络搜索 (ThinkAny)' },
+        eyedanceImage: { create: createEyeDanceCard, label: '文生图 (EyeDance)' },
         judgeTone: { create: (post) => createGoblinCard(post, 'JudgeTone', '语气评判'), label: '语气评判' },
         suggestResponse: { create: (post) => createGoblinCard(post, 'SuggestResponse', '建议回应'), label: '建议回应' },
         formalizer: { create: createFormalizerBox, label: '多维分析' },
@@ -297,17 +367,79 @@
         return `请以“${role}”的身份，为以下内容生成分析。\n\n主题是：“${topicTitle}”\n\n具体内容如下：\n${postContent}`;
     }
 
+    function getThinkAnyContext(post) {
+        const topicTitle = document.querySelector("#topic-title .fancy-title")?.innerText.trim() || '当前帖子';
+        const firstPostCooked = document.querySelector('article.topic-post[data-post-number="1"] .cooked');
+        const firstPostContent = firstPostCooked ? firstPostCooked.innerText.trim() : '（无法获取主楼内容）';
+        const currentPostContent = post.querySelector('.cooked')?.innerText.trim();
+        if (!currentPostContent) return null;
+
+        let context = `请你结合以下整个帖子的上下文，对“当前帖子内容”进行分析或回复。\n\n`;
+        context += `== 帖子主题 ==\n${topicTitle}\n\n`;
+        context += `== 楼主内容 ==\n${firstPostContent}\n\n`;
+        context += `== 当前帖子内容 ==\n${currentPostContent}`;
+
+        return context;
+    }
+
     function simpleMarkdownParse(text) {
-        let html = text
-            .replace(/^(#+)\s*(.*$)/gim, (match, hashes, content) => `<h${hashes.length}>${content}</h${hashes.length}>`)
-            .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-            .replace(/((?:^- .*(?:\n|$))+)/gim, (match) => `<ul>${match.trim().split('\n').map(item => `<li>${item.substring(2).trim()}</li>`).join('')}</ul>`);
-        html = html
+        // Pre-process to escape HTML, then apply markdown
+        let html = escapeHtml(text)
+            .replace(/&lt;br&gt;/g, '\n') // Restore newlines that might have been escaped
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+        const lines = html.split('\n');
+        let inUl = false;
+        let inOl = false;
+        let resultHtml = '';
+
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
+
+            // Headers
+            if (line.startsWith('#')) {
+                const match = line.match(/^(#+)\s*(.*)/);
+                if (match) {
+                    line = `<h${match[1].length}>${match[2].trim()}</h${match[1].length}>`;
+                }
+            }
+            // Blockquotes
+            else if (line.startsWith('>')) {
+                line = `<blockquote>${line.substring(1).trim()}</blockquote>`;
+            }
+            // Unordered lists
+            else if (line.trim().startsWith('- ')) {
+                if (!inUl) { resultHtml += '<ul>\n'; inUl = true; }
+                line = `<li>${line.trim().substring(2).trim()}</li>`;
+            }
+            // Ordered lists
+            else if (line.trim().match(/^\d+\.\s/)) {
+                if (!inOl) { resultHtml += '<ol>\n'; inOl = true; }
+                line = `<li>${line.trim().replace(/^\d+\.\s/, '').trim()}</li>`;
+            }
+            // Normal paragraph
+            else {
+                if (inUl) { resultHtml += '</ul>\n'; inUl = false; }
+                if (inOl) { resultHtml += '</ol>\n'; inOl = false; }
+                if (line.trim() !== '') {
+                    line = `<p>${line}</p>`;
+                }
+            }
+            resultHtml += line + '\n';
+        }
+
+        if (inUl) resultHtml += '</ul>\n';
+        if (inOl) resultHtml += '</ol>\n';
+
+        // Apply inline styles after block processing
+        resultHtml = resultHtml
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
             .replace(/`(.*?)`/g, '<code>$1</code>');
-        return html.replace(/\n/g, '<br>').replace(/<br>(<(?:ul|blockquote|h\d)>)/g, '$1').replace(/(<\/(?:ul|blockquote|h\d)>)<br>/g, '$1');
+
+        return resultHtml.replace(/<p>\s*<\/p>/g, '').replace(/\n/g, '');
     }
+
 
     function createCard(post, { cardClass, title, analyzeFn }) {
         const card = document.createElement('div');
@@ -336,7 +468,7 @@
                 document.dispatchEvent(event);
             }, (err) => {
                 log('error', `分析失败: ${err}`);
-                contentDiv.textContent = err; contentDiv.classList.remove('loading');
+                contentDiv.textContent = `分析失败: ${err}`; contentDiv.classList.remove('loading');
             }, log, contentDiv);
         };
 
@@ -346,6 +478,131 @@
         card.querySelector('.goblin-close-btn').addEventListener('click', () => card.remove());
         doAnalyze(); return card;
     }
+
+    // --- [v19.4] 核心功能卡片 ---
+
+    function createThinkAnyCard(post, mode, title, cardClass) {
+        return createCard(post, {
+            cardClass, title,
+            analyzeFn: (p, success, error, log) => {
+                const contextualContent = getThinkAnyContext(p);
+                if (!contextualContent) return error('错误：无法获取帖子内容或上下文。');
+
+                const headers = {
+                    "Content-Type": "application/json", "Cookie": THINKANY_COOKIE,
+                    "Origin": "https://thinkany.ai", "Referer": "https://thinkany.ai/zh",
+                };
+                const payload = {
+                    "conv_uuid": `m-${crypto.randomUUID().replace(/-/g, '').substring(0, 12)}`,
+                    "uuid": crypto.randomUUID(),
+                    "role": "user", "content": contextualContent,
+                    "llm_model": "gpt-4o-mini", "locale": "zh", "mode": mode,
+                    "source": "all", "action": `init_${mode}`
+                };
+
+                log('info', `准备请求 ThinkAny (模式: ${mode})，已包含上下文...`);
+                callApi({
+                    service: 'ThinkAny', log,
+                    url: "https://thinkany.ai/api/chat/completions",
+                    headers: headers, data: JSON.stringify(payload),
+                }).then(responseText => {
+                    log('info', 'ThinkAny 数据流接收完毕，开始解析...');
+                    let fullContent = '';
+                    const lines = responseText.trim().split('\n');
+
+                    lines.forEach(line => {
+                        if (!line.startsWith('data:')) return;
+                        const contentStr = line.substring(5).trim();
+                        if (!contentStr || contentStr === '[DONE]') return;
+
+                        try {
+                            const data = JSON.parse(contentStr);
+                            let md_part = '';
+                            if (data.object === "stream.event") {
+                                const msg = data.metadata?.msg;
+                                if (msg?.questions && !fullContent.includes('### 搜索过程')) {
+                                    md_part = `### 搜索过程\n${msg.questions.map(q => `- ${q}`).join('\n')}\n\n`;
+                                }
+                                if (msg?.rag_results && !fullContent.includes('### 来源')) {
+                                    md_part = `### 来源\n${msg.rag_results.map((r, i) => `${i+1}. [${r.title}](${r.link})`).join('\n')}\n\n`;
+                                }
+                            } else if (data.object === "chat.completion.chunk") {
+                                if (fullContent === '' && mode === 'search' && !fullContent.includes('### 答案')) {
+                                    md_part = '### 答案\n';
+                                }
+                                md_part += data.choices[0]?.delta?.content || '';
+                            }
+                            fullContent += md_part;
+                        } catch (e) {
+                            log('warn', `解析SSE数据块失败: ${e}, 内容: ${contentStr}`);
+                        }
+                    });
+                    success(simpleMarkdownParse(fullContent), fullContent);
+                }).catch(e => error(`ThinkAny 请求失败: ${e.message || e}`));
+            }
+        });
+    }
+
+    function createEyeDanceCard(post) {
+        return createCard(post, {
+            cardClass: 'eyedance-image-card', title: '文生图 (EyeDance)',
+            analyzeFn: (p, success, error, log, contentDiv) => {
+                const postContent = p.querySelector('.cooked')?.innerText.trim();
+                if (!postContent) return error('错误：无法获取帖子内容。');
+
+                contentDiv.innerHTML = `
+                    <div class="eyedance-image-grid">
+                        <div id="eyedance-flux"><h4>Flux-Krea</h4><p class="loading">正在生成...</p></div>
+                    </div>`;
+
+                const models = ['Flux-Krea'];
+                const promises = models.map(modelKey => {
+                    const apiModelName = modelKey;
+
+                    const headers = {
+                        "Content-Type": "application/json", "Origin": "https://eyedance.net",
+                        "Referer": "https://eyedance.net/es/flux-krea",
+                        "Cookie": "NEXT_LOCALE=es; active_theme=default"
+                    };
+
+                    const payload = {
+                        "prompt": postContent, "width": 600, "height": 450, "steps": 20,
+                        "batch_size": 1, "model": apiModelName, "seed": Math.floor(Math.random() * 1000000)
+                    };
+
+                    log('info', `开始为模型 ${apiModelName} 生成图像...`);
+                    return callApi({
+                        service: `EyeDance-${apiModelName}`, log,
+                        url: "https://eyedance.net/api/generate",
+                        headers: headers, data: JSON.stringify(payload)
+                    }).then(res => ({ modelKey, res })).catch(err => ({ modelKey, err }));
+                });
+
+                Promise.all(promises).then(results => {
+                    results.forEach(result => {
+                        const container = contentDiv.querySelector(`#eyedance-flux`);
+                        if (result.err) {
+                            log('error', `模型 ${result.modelKey} 生成失败: ${result.err}`);
+                            container.innerHTML = `<h4>${result.modelKey}</h4><p style="color:red;">生成失败</p>`;
+                        } else {
+                            try {
+                                const data = JSON.parse(result.res);
+                                const b64 = data.imageUrl.split(',')[1];
+                                log('success', `模型 ${result.modelKey} 生成成功。`);
+                                container.innerHTML = `<h4>${result.modelKey}</h4><img src="data:image/png;base64,${b64}" />`;
+                            } catch (e) {
+                                log('error', `解析模型 ${result.modelKey} 响应失败: ${e}`);
+                                container.innerHTML = `<h4>${result.modelKey}</h4><p style="color:red;">解析失败</p>`;
+                            }
+                        }
+                    });
+                });
+            }
+        });
+    }
+
+
+    // --- 原有卡片创建函数 ---
 
     function createGoblinCard(post, model, title) {
         return createCard(post, {
@@ -621,8 +878,12 @@
                         const dataStr = line.substring(5).trim();
                         if (dataStr === 'Data transfer completed.') { finished = true; break; }
                         if (dataStr) {
-                            const data = JSON.parse(dataStr);
-                            if (data.data) fullContent += data.data;
+                            try {
+                                const data = JSON.parse(dataStr);
+                                if (data.data) fullContent += data.data;
+                            } catch(e) {
+                                log('warn', `无法解析Decopy JSON块: ${dataStr}`);
+                            }
                         }
                     }
                 }
@@ -1091,7 +1352,7 @@
 
         posts.forEach(postEl => {
             const postNumber = postEl.dataset.postNumber;
-            const author = postEl.querySelector('.username')?.innerText.trim() || '未知作者';
+            const author = postEl.querySelector('a[data-user-card]')?.innerText.trim() || postEl.querySelector('.username')?.innerText.trim() || '未知作者';
             const cookedEl = postEl.querySelector('.cooked');
             const content = cookedEl?.innerText.trim() || '';
             const htmlContent = cookedEl?.innerHTML.trim() || '';
