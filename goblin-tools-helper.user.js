@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         LinuxDo 超级分析助手 v19.5 (动态主题优化版)
+// @name         LinuxDo 超级分析助手 v19.6 (Deno 功能集成版)
 // @namespace    http://tampermonkey.net/
-// @version      19.5
-// @description  新增动态深色/浅色主题切换功能，并采用优化的深色模式UI，提升视觉体验和可读性。主题偏好将自动保存。
+// @version      19.6
+// @description  新增了从 aianswergenerator-2api (Deno) 项目移植的 AI 生成答案功能，并为其添加了专属UI卡片、上下文支持和伪流式响应效果，同时完美适配深色/浅色主题。
 // @author       Your AI Assistant & BiFangKNT
 // @match        https://linux.do/*
 // @icon         https://cdn.linux.do/uploads/default/optimized/3X/6/f/6f47356b54ada865485956b15a311c05b8f78a75_2_32x32.png
@@ -16,6 +16,7 @@
 // @connect      api.decopy.ai
 // @connect      thinkany.ai
 // @connect      eyedance.net
+// @connect      text.pollinations.ai
 // ==/UserScript==
 
 (function() {
@@ -108,6 +109,9 @@
         .eyedance-image-card .goblin-card-header { background-color: #6ee7b7; color: #047857; }
         .web-search-card { background: linear-gradient(135deg, #e0e7ff 0%, #eef2ff 100%); border-color: #c7d2fe; }
         .web-search-card .goblin-card-header { background-color: #a5b4fc; color: #3730a3; }
+        /* 新增 Deno Port 卡片样式 (浅色) */
+        .ai-answer-generator-card { background: linear-gradient(135deg, #e0fff8 0%, #f0fffb 100%); border-color: #a3f0e0; }
+        .ai-answer-generator-card .goblin-card-header { background-color: #79e8d1; color: #004d40; }
 
         /* --- 多维分析 & 顾问卡片内部颜色区分 (浅色) --- */
         .formalizer-section, .consultant-section { padding: 8px; margin-bottom: 10px; border-left: 3px solid; border-radius: 4px; transition: background-color 0.3s; }
@@ -168,6 +172,10 @@
         body.sa-dark-theme .eyedance-image-card .goblin-card-header { background-color: #5a965a; color: #ffffff; }
         body.sa-dark-theme .web-search-card { background: linear-gradient(135deg, #1a1d2e, #13151f); border-color: #b4befe; }
         body.sa-dark-theme .web-search-card .goblin-card-header { background-color: #6a75c4; color: #ffffff; }
+        /* 新增 Deno Port 卡片样式 (深色) */
+        body.sa-dark-theme .ai-answer-generator-card { background: linear-gradient(135deg, #0f2e29, #112220); border-color: #4db6ac; }
+        body.sa-dark-theme .ai-answer-generator-card .goblin-card-header { background-color: #26a69a; color: #ffffff; }
+
 
         /* 内容文字样式 (深色) */
         body.sa-dark-theme .goblin-card-content h4, body.sa-dark-theme .goblin-card-content h2, body.sa-dark-theme .goblin-card-content h3 { color: #d0d8ff; border-bottom-color: #585b70; font-weight: 600; }
@@ -416,6 +424,7 @@
 
     // --- 4. 各模块实现 ---
     const ANALYSIS_TOOLS = {
+        aiAnswerGenerator: { create: createAIAnswerGeneratorCard, label: 'AI 生成答案 (Deno Port)' },
         aiReply: { create: (post) => createThinkAnyCard(post, 'chat', 'AI 回复 (ThinkAny)', 'ai-reply-card'), label: 'AI 回复 (ThinkAny)' },
         webSearch: { create: (post) => createThinkAnyCard(post, 'search', '网络搜索 (ThinkAny)', 'web-search-card'), label: '网络搜索 (ThinkAny)' },
         eyedanceImage: { create: createEyeDanceCard, label: '文生图 (EyeDance)' },
@@ -451,6 +460,16 @@
 
         return context;
     }
+
+    // 新增：为 aianswergenerator 获取上下文的函数
+    function getAIAnswerGeneratorContext(post) {
+        const topicTitle = document.querySelector("#topic-title .fancy-title")?.innerText.trim() || '未知主题';
+        const postContent = post.querySelector('.cooked')?.innerText.trim();
+        if (!postContent) return null;
+
+        return `帖子主题（帖子讨论的话题等等）：\n\n${topicTitle}\n\n当前用户的评论：\n\n${postContent}`;
+    }
+
 
     function simpleMarkdownParse(text) {
         // Pre-process to escape HTML, then apply markdown
@@ -548,6 +567,75 @@
         card.querySelector('.goblin-close-btn').addEventListener('click', () => card.remove());
         doAnalyze(); return card;
     }
+
+    // --- [v19.6] 新增 Deno Port 功能卡片 ---
+    function createAIAnswerGeneratorCard(post) {
+        return createCard(post, {
+            cardClass: 'ai-answer-generator-card',
+            title: 'AI 生成答案 (Deno Port)',
+            analyzeFn: (p, success, error, log, contentDiv) => {
+                const contextualContent = getAIAnswerGeneratorContext(p);
+                if (!contextualContent) {
+                    return error('错误：无法获取帖子内容或上下文。');
+                }
+
+                const encodedPrompt = encodeURIComponent(contextualContent);
+                const upstreamUrl = `https://text.pollinations.ai/${encodedPrompt}?model=openai`;
+
+                const headers = {
+                    "Accept": "*/*",
+                    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                    "Origin": "https://aianswergenerator.pro",
+                    "Referer": "https://aianswergenerator.pro/",
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                };
+
+                log('info', `请求上游 URL: GET ${upstreamUrl}`);
+
+                callApi({
+                    service: 'AIAnswerGenerator',
+                    log,
+                    url: upstreamUrl,
+                    method: 'GET',
+                    headers: headers,
+                }).then(fullText => {
+                    log('info', `收到上游完整响应，长度: ${fullText.length} characters.`);
+                    log('info', "开始执行伪流式生成...");
+                    contentDiv.classList.remove('loading');
+                    contentDiv.innerHTML = ''; // 清空加载状态
+
+                    let accumulatedText = '';
+                    const chars = Array.from(fullText); // 使用 Array.from 支持 Unicode
+                    let i = 0;
+                    const streamDelay = 10; // 伪流式延迟（毫秒）
+
+                    function streamCharacter() {
+                        if (i < chars.length) {
+                            accumulatedText += chars[i];
+                            // 每隔几个字符更新一次DOM，以提高性能
+                            if (i % 2 === 0 || i === chars.length - 1) {
+                                contentDiv.innerHTML = simpleMarkdownParse(accumulatedText);
+                                contentDiv.scrollTop = contentDiv.scrollHeight; // 自动滚动到底部
+                            }
+                            i++;
+                            setTimeout(streamCharacter, streamDelay);
+                        } else {
+                            // 确保最终内容被完全解析和渲染
+                            contentDiv.innerHTML = simpleMarkdownParse(accumulatedText);
+                            log('success', '伪流式生成完成。');
+                            // 调用 success 回调函数，以便复制等功能能获取到最终结果
+                            success(simpleMarkdownParse(accumulatedText), accumulatedText);
+                        }
+                    }
+                    streamCharacter();
+
+                }).catch(e => {
+                    error(`AIAnswerGenerator 请求失败: ${e.message || e}`);
+                });
+            }
+        });
+    }
+
 
     // --- [v19.4] 核心功能卡片 ---
 
